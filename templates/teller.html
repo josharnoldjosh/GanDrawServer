@@ -15,27 +15,24 @@
         <script type="text/javascript" charset="utf-8">
 
             // Other variables
-            var game_id = '{{ game_id }}';      
+            var game_id = '{{ game_id }}';             
 
             var socket;
             $(document).ready(function() {
+                
+                var ext = 'http://';            
 
-                socket = io.connect('https://' + document.domain + ':' + location.port);
+                socket = io.connect(ext + document.domain + ':' + location.port);    
 
                 socket.on('connect', function() {
-                    socket.emit('message', {'text':"User connected!", 'game_id':game_id, 'user_type':'Teller'});
+                    socket.emit('get_dialog', {'game_id':game_id, 'user_type':'Teller'});             
                 });        
 
-                socket.on('display_message', function(data) {                    
+                socket.on('dialog', function(data) {                    
                     if (data["game_id"] == game_id) {     
-
-                        var prefix = data["user_type"] + ": ";
-                        if (data["user_type"] == "Teller") {
-                            prefix = "You: "
-                        }      
-                                      
-                        document.getElementById("chat").value += prefix + data['text'] + '\n\n';
+                        document.getElementById("chat").value = data['text'].replace(/Teller/gi, "You");
                         document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
+                        document.getElementById("textfield_input").disabled = !data['is_drawer_turn'];
                     }                    
                 });        
 

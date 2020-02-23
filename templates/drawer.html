@@ -15,29 +15,26 @@
         <script type="text/javascript" charset="utf-8">
 
             // Other variables
-            var game_id = '{{ game_id }}';      
+            var game_id = '{{ game_id }}';              
 
             var socket;
             $(document).ready(function() {
 
-                socket = io.connect('https://' + document.domain + ':' + location.port);
+                var ext = 'http://';            
+
+                socket = io.connect(ext + document.domain + ':' + location.port);
 
                 socket.on('connect', function() {
-                    socket.emit('message', {'text':"User connected!", 'game_id':game_id, 'user_type':'Drawer'});
+                    socket.emit('get_dialog', {'game_id':game_id, 'user_type':'Drawer'});             
                 });        
 
-                socket.on('display_message', function(data) {                    
-                    if (data["game_id"] == game_id) {     
-
-                        var prefix = data["user_type"] + ": ";
-                        if (data["user_type"] == "Drawer") {
-                            prefix = "You: "
-                        }      
-
-                        document.getElementById("chat").value += prefix + data['text'] + '\n\n';
+                socket.on('dialog', function(data) {                    
+                    if (data["game_id"] == game_id) {                             
+                        document.getElementById("chat").value = data['text'].replace(/Drawer/gi, "You");
                         document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
+                        document.getElementById("textfield_input").disabled = data['is_drawer_turn'];
                     }                    
-                });        
+                });       
 
                 // Enter key pressed
                 const node = document.getElementsByClassName("textfield")[0];
@@ -79,9 +76,9 @@
                 <input type="text" id="textfield_input" style="margin: 5px; height: 30px; width: 500px;" class="textfield"> 
             </div>
 
-            <div style="width: 100%; display: flex; justify-content: center; padding-top: 25px;">
+<!--             <div style="width: 100%; display: flex; justify-content: center; padding-top: 25px;">
                 <button id="new_game" style="height: 40px; width: 130px; background-color: #3498db; text-decoration-color: white; color: white; border-radius: 7px; font-family: monospace; font-size: 16px;">Finish Game</button>
-            </div>
+            </div> -->
         </div>    
             
     </body>
