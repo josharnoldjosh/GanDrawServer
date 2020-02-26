@@ -18,7 +18,7 @@ class GameManager:
             dialog = json.load(file)
 
             curr_idx = self.get_current_turn_idx(game_id)
-            if user_type.lower() == 'teller': curr_idx += 1
+            if user_type.lower() == 'drawer': curr_idx -= 1
 
             turn = {'text':text, 'user_type':user_type, 'turn_idx':curr_idx}
             dialog['dialog'].append(turn)            
@@ -49,30 +49,26 @@ class GameManager:
             return flags["drawer_uploaded_images"]
 
     @classmethod
-    def toggle(self, game_id, flag_name, force_true=False, force_false=False):
+    def set_flags(self, game_id, key, value=None, toggle=False):
         flags_path = os.path.join('data/games/', game_id, 'flags.json')
         with open(flags_path, 'r') as file:
             flags = json.load(file)
 
-            if not force_false and not force_true:
-                flags[flag_name] = not flags[flag_name]            
-            elif force_true:
-                flags[flag_name] = True
-            elif force_false:
-                flags[flag_name] = False
+            if toggle:
+                flags[key] = not flags[key]            
+            else:
+                flags[key] = value                            
 
             with open(flags_path, 'w') as file:
                 json.dump(flags, file)                
         return
 
     @classmethod
-    def is_drawer_turn(self, game_id):
+    def read_flags(self, game_id, key):
         path = os.path.join('data/games/', game_id, 'flags.json')
-        if not os.path.exists(path): print("Error loading flags for game", game_id)
-
         with open(path, 'r') as file:
             flags = json.load(file)
-            return flags["is_drawer_turn"]
+            return flags[key]
 
     @classmethod
     def get_current_turn_idx(self, game_id):
@@ -80,11 +76,11 @@ class GameManager:
         Returns an Int.
         """
         path = os.path.join('data/games/', game_id, 'dialog.json')
-        current_turn_idx = 0
+        current_turn_idx = -1;
         with open(path, 'r') as file:
             dialog = json.load(file)
             for turn in dialog['dialog']: current_turn_idx = max(current_turn_idx, turn['turn_idx'])                
-        return current_turn_idx
+        return current_turn_idx+1
         
     @classmethod
     def get_target_image_and_label(self, game_id):

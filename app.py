@@ -30,7 +30,7 @@ def upload_drawer_images(game_id):
             target_label.save(os.path.join(app.config['UPLOAD_FOLDER'], game_id+'_target_label.png'))
             # OPTIONAL : Stop user from accidently uploading the same image
             GM.copy_tmp_images(game_id, path=app.config['UPLOAD_FOLDER'])
-            GM.toggle(game_id=game_id, flag_name="drawer_uploaded_images", force_true=True)
+            GM.set_flags(game_id=game_id, key="drawer_uploaded_images", value=True)
             return "success"    
     return 'error'
 
@@ -48,16 +48,20 @@ def send_game_data(message):
     user_type = message['user_type']
 
     text = GM.get_dialog(game_id, user_type)
-    is_drawer_turn = GM.is_drawer_turn(game_id)
+    is_drawer_turn = GM.read_flags(game_id, "is_drawer_turn")
     drawer_uploaded_images = GM.drawer_uploaded_images(game_id)
     target_image_and_label = GM.get_target_image_and_label(game_id)
+    num_peaks_left = GM.read_flags(game_id, 'num_peaks_left')
+    turn_idx = GM.get_current_turn_idx(game_id)
 
     payload = {
     'text':text,
     'game_id':game_id,
     'is_drawer_turn':is_drawer_turn,
     'drawer_uploaded_images':drawer_uploaded_images,
-    'target_image_and_label':target_image_and_label
+    'target_image_and_label':target_image_and_label,
+    'num_peaks_left':num_peaks_left,
+    'turn_idx':turn_idx
     }
 
     emit('game_data', payload, broadcast=True, room=game_id)       
@@ -68,9 +72,16 @@ def message_recieved(message):
     text = message['text']
     user_type = message['user_type']    
     GM.append_message(game_id, text, user_type)
-    GM.toggle(game_id=game_id, flag_name="is_drawer_turn")
+    GM.set_flags(game_id=game_id, key="is_drawer_turn", toggle=True)
     if user_type.lower() == "drawer":
-        GM.toggle(game_id=game_id, flag_name="drawer_uploaded_images", force_false=True)
+        GM.set_flags(game_id=game_id, key="drawer_uploaded_images", value=False)
+    send_game_data(message)
+
+@socketio.on('peek')
+def peek(message):
+    game_id = message['game_id']
+    num_peeks = GM.read_flags(game_id, 'num_peaks_left')
+    GM.set_flags(game_id=game_id, key='num_peaks_left', value=num_peeks-1)
     send_game_data(message)
 
 if __name__ == '__main__':

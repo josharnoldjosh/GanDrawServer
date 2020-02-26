@@ -19,6 +19,8 @@
             var email = '{{ email }}';
 
             var is_teller_turn = false;  
+            var num_peaks_left = "?";
+            var turn_idx = 0;
 
             var socket;
             $(document).ready(function() {
@@ -37,9 +39,11 @@
                 });       
 
                 // Update the stat of the Drawer (whether they are idle or active)
-                function update_state() {
+                function update_state() {                    
+                    document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;                                        
                     document.getElementById("send_message").disabled = !is_teller_turn;
                     document.getElementById("textfield_input").disabled = !is_teller_turn;
+                    document.getElementById('peek_button').innerHTML = "Peek (" + String(num_peaks_left) + ")";   
 
                     if (is_teller_turn == true) {
                         document.getElementById('send_message').innerHTML = "Send message";   
@@ -50,31 +54,58 @@
                     }
                 };
 
-                socket.on('game_data', function(data) {                                        
+                function update_parameters(data) {
                     document.getElementById("chat").value = data['text'].replace(/Teller/gi, "You");
-                    document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;                    
                     document.getElementById('target_image').src = data['target_image_and_label']['target_image'];                   
-                    document.getElementById('target_label').src = data['target_image_and_label']['target_label'];                                         
+                    document.getElementById('target_label').src = data['target_image_and_label']['target_label'];
                     is_teller_turn = !data['is_drawer_turn'];
+                    num_peaks_left = data['num_peaks_left'];
+                    turn_idx = Math.max(data['turn_idx'], turn_idx);
+                };
+
+                socket.on('game_data', function(data) {                                                            
+                    update_parameters(data);
                     update_state();
                 });  
-
-                // Enter key pressed - send message
+                
                 document.getElementById('send_message').addEventListener('mouseup', () => {                                     
                     var txt = document.getElementById('textfield_input').value;
+
+                    function send_message() {
+                        document.getElementById('send_message').innerHTML = "Sending...";   
+                        socket.emit('send_message', {'text':txt, 'game_id':game_id, 'user_type':'Teller'});  
+                    };
         
                     if (txt.length < 250 && txt.length > 2) {
-
                         document.getElementById('textfield_input').value = "";
                         document.getElementById("send_message").disabled = true;
                         document.getElementById("textfield_input").disabled = true;
-                        socket.emit('send_message', {'text':txt, 'game_id':game_id, 'user_type':'Teller'});             
-
+                        send_message(txt)                                   
                     }else if (txt.length > 250) {
                         alert("Your message is too long!");
                     }else{
                         alert("Your message is too short!");
                     }                    
+                });
+
+                // peek
+                document.getElementById('peek_button').addEventListener('mouseup', () => {                      
+                    // alert(turn_idx);
+
+                    if (turn_idx < 1) {
+                        alert("Sorry! It's too early in the game to peek!");                        
+                        return;
+                    }
+
+                    if (num_peaks_left <= 0) {
+                        alert("Sorry! You don't have any more peeks left!");
+                        return;
+                    };
+ 
+                    if ( confirm("Are you sure you want to peek?") ) {
+                        socket.emit('peek', {'game_id':game_id, 'user_type':'Teller'});
+                    }
+
                 });
             });
         </script>
