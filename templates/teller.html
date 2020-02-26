@@ -14,7 +14,7 @@
 
         <script type="text/javascript" charset="utf-8">
 
-            // Other variables
+            // Load variables
             var game_id = '{{ game_id }}';             
             var email = '{{ email }}';  
 
@@ -30,25 +30,19 @@
                 });       
 
                 socket.on('connect', function() {
-                    socket.emit('join_game', {'game_id':game_id});                  
-                    socket.emit('get_dialog', {'game_id':game_id, 'user_type':'Teller'}); 
-                    socket.emit('get_game_data', {'game_id':game_id}); 
+                    socket.emit('join_game', {'game_id':game_id});                    
+                    socket.emit('get_game_data', {'game_id':game_id, 'user_type':'Teller'}); 
                 });       
 
-                socket.on('dialog', function(data) {                    
-                    if (data["game_id"] == game_id) {     
-                        document.getElementById("chat").value = data['text'].replace(/Teller/gi, "You");
-                        document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
-                        document.getElementById("textfield_input").disabled = data['is_drawer_turn'];
-                    }                    
+                socket.on('game_data', function(data) {                                        
+                    document.getElementById("chat").value = data['text'].replace(/Teller/gi, "You");
+                    document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
+                    document.getElementById("textfield_input").disabled = data['is_drawer_turn'];
+                    document.getElementById('target_image').src = data['target_image_and_label']['target_image'];                   
+                    document.getElementById('target_label').src = data['target_image_and_label']['target_label'];                                         
                 });  
 
-                socket.on('game_data', function(data) {
-                    document.getElementById('target_image').src = data['images']['target_image'];                   
-                    document.getElementById('target_label').src = data['images']['target_label'];                   
-                });       
-
-                // Enter key pressed
+                // Enter key pressed - send message
                 const node = document.getElementsByClassName("textfield")[0];
                 node.addEventListener("keyup", function(event) {                    
                     if (event.key === "Enter") {
@@ -58,7 +52,7 @@
                         if (txt.length < 250 && txt.length > 2) {
 
                             document.getElementById('textfield_input').value = "";
-                            socket.emit('message', {'text':txt, 'game_id':game_id, 'user_type':'Teller'});             
+                            socket.emit('send_message', {'text':txt, 'game_id':game_id, 'user_type':'Teller'});             
 
                         }else if (txt.length > 250) {
                             alert("Your message is too long!");

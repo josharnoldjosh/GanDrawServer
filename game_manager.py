@@ -5,6 +5,7 @@ import cv2
 import base64
 import io
 from add_text import *
+import shutil
 
 class GameManager:
 
@@ -16,7 +17,10 @@ class GameManager:
         with open(path, 'r') as file:
             dialog = json.load(file)
 
-            turn = {'text':text, 'user_type':user_type, 'turn_idx':len(dialog['dialog'])}
+            curr_idx = self.get_current_turn_idx(game_id)
+            if user_type.lower() == 'teller': curr_idx += 1
+
+            turn = {'text':text, 'user_type':user_type, 'turn_idx':curr_idx}
             dialog['dialog'].append(turn)            
         
             with open(path, 'w') as file:
@@ -38,18 +42,27 @@ class GameManager:
         return result
 
     @classmethod
-    def toggle_turn(self, game_id):
-        flags_path = os.path.join('data/games/', game_id, 'flags.json')
+    def drawer_uploaded_images(self, game_id):
+        path = os.path.join('data/games/', game_id, 'flags.json')
+        with open(path, 'r') as file:
+            flags = json.load(file)
+            return flags["drawer_uploaded_images"]
 
+    @classmethod
+    def toggle(self, game_id, flag_name, force_true=False, force_false=False):
+        flags_path = os.path.join('data/games/', game_id, 'flags.json')
         with open(flags_path, 'r') as file:
             flags = json.load(file)
 
-            flags["is_drawer_turn"] = not flags["is_drawer_turn"]
-            print("opened")
+            if not force_false and not force_true:
+                flags[flag_name] = not flags[flag_name]            
+            elif force_true:
+                flags[flag_name] = True
+            elif force_false:
+                flags[flag_name] = False
 
             with open(flags_path, 'w') as file:
-                json.dump(flags, file)
-                print("dumpped")
+                json.dump(flags, file)                
         return
 
     @classmethod
@@ -60,6 +73,18 @@ class GameManager:
         with open(path, 'r') as file:
             flags = json.load(file)
             return flags["is_drawer_turn"]
+
+    @classmethod
+    def get_current_turn_idx(self, game_id):
+        """
+        Returns an Int.
+        """
+        path = os.path.join('data/games/', game_id, 'dialog.json')
+        current_turn_idx = 0
+        with open(path, 'r') as file:
+            dialog = json.load(file)
+            for turn in dialog['dialog']: current_turn_idx = max(current_turn_idx, turn['turn_idx'])                
+        return current_turn_idx
         
     @classmethod
     def get_target_image_and_label(self, game_id):
@@ -83,3 +108,12 @@ class GameManager:
             return img_str
 
         return {'target_image':target_image(game_id), 'target_label':target_label(game_id)}
+
+    @classmethod
+    def copy_tmp_images(self, game_id, path):
+        target_image_path = os.path.join(path, game_id+'_target_image.jpg')
+        target_label_path = os.path.join(path, game_id+'_target_label.png')
+        current_turn = self.get_current_turn_idx(game_id)
+        shutil.copyfile(target_image_path, os.path.join(os.getcwd(), 'data/games', game_id, 'target_image_'+str(current_turn)+'.jpg'))
+        shutil.copyfile(target_label_path, os.path.join(os.getcwd(), 'data/games', game_id, 'target_label_'+str(current_turn)+'.jpg'))
+        return
