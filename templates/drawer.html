@@ -14,7 +14,9 @@
         <script type="text/javascript" charset="utf-8">
 
             // Other variables
-            var game_id = '{{ game_id }}';    
+            var game_id = '{{ game_id }}';  
+            var email = '{{ email }}';
+
             var is_drawer_turn = false;          
             var drawer_uploaded_images = false;
 
@@ -64,6 +66,8 @@
                     function send_message(txt) {                  
                         if (txt.length < 250 && txt.length > 2) {
                             document.getElementById('textfield_input').value = "";
+                            document.getElementById("send_message").disabled = true;
+                            document.getElementById("textfield_input").disabled = true;
                             socket.emit('send_message', {'text':txt, 'game_id':game_id, 'user_type':'Drawer'});
                         }else if (txt.length > 250) {
                             alert("Your message is too long!");

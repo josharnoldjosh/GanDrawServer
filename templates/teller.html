@@ -16,7 +16,9 @@
 
             // Load variables
             var game_id = '{{ game_id }}';             
-            var email = '{{ email }}';  
+            var email = '{{ email }}';
+
+            var is_teller_turn = false;  
 
             var socket;
             $(document).ready(function() {
@@ -34,65 +36,142 @@
                     socket.emit('get_game_data', {'game_id':game_id, 'user_type':'Teller'}); 
                 });       
 
+                // Update the stat of the Drawer (whether they are idle or active)
+                function update_state() {
+                    document.getElementById("send_message").disabled = !is_teller_turn;
+                    document.getElementById("textfield_input").disabled = !is_teller_turn;
+
+                    if (is_teller_turn == true) {
+                        document.getElementById('send_message').innerHTML = "Send message";   
+                        document.getElementById("send_message").style.background='#34e054';                
+                    }else{
+                        document.getElementById('send_message').innerHTML = "Waiting for Drawer...";
+                        document.getElementById("send_message").style.background='#3498db';
+                    }
+                };
+
                 socket.on('game_data', function(data) {                                        
                     document.getElementById("chat").value = data['text'].replace(/Teller/gi, "You");
-                    document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
-                    document.getElementById("textfield_input").disabled = data['is_drawer_turn'];
+                    document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;                    
                     document.getElementById('target_image').src = data['target_image_and_label']['target_image'];                   
                     document.getElementById('target_label').src = data['target_image_and_label']['target_label'];                                         
+                    is_teller_turn = !data['is_drawer_turn'];
+                    update_state();
                 });  
 
                 // Enter key pressed - send message
-                const node = document.getElementsByClassName("textfield")[0];
-                node.addEventListener("keyup", function(event) {                    
-                    if (event.key === "Enter") {
+                document.getElementById('send_message').addEventListener('mouseup', () => {                                     
+                    var txt = document.getElementById('textfield_input').value;
+        
+                    if (txt.length < 250 && txt.length > 2) {
 
-                        var txt = document.getElementById('textfield_input').value;
-            
-                        if (txt.length < 250 && txt.length > 2) {
+                        document.getElementById('textfield_input').value = "";
+                        document.getElementById("send_message").disabled = true;
+                        document.getElementById("textfield_input").disabled = true;
+                        socket.emit('send_message', {'text':txt, 'game_id':game_id, 'user_type':'Teller'});             
 
-                            document.getElementById('textfield_input').value = "";
-                            socket.emit('send_message', {'text':txt, 'game_id':game_id, 'user_type':'Teller'});             
-
-                        }else if (txt.length > 250) {
-                            alert("Your message is too long!");
-                        }else{
-                            alert("Your message is too short!");
-                        }                     
-                    }
+                    }else if (txt.length > 250) {
+                        alert("Your message is too long!");
+                    }else{
+                        alert("Your message is too short!");
+                    }                    
                 });
             });
         </script>
+
+        <style type="text/css">
+            .container {
+                margin-top: 25px;
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                justify-content: center;
+                align-content: center;
+                flex-wrap: wrap;
+            }
+
+            .pane-left {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+            }
+
+            .pane-right {
+                display: flex;
+                align-content: center;
+                justify-content: center;
+                align-items: center;
+                flex-direction: column;
+            }
+
+            .small-button {
+                margin-top: 20px;
+                width: 120px;
+                background-color: #3498db;
+                height: 35px;
+                text-decoration-color: white;
+                color: white;
+                border-radius: 7px;
+                font-family: monospace;
+                font-size: 15px;
+            }
+
+            .large-button {
+                margin: 5px;
+                height: 40px;
+                width: 500px;
+                background-color: #3498db;
+                text-decoration-color: white;
+                color: white; border-radius: 7px;
+                font-family: monospace;
+                font-size: 16px;
+            }
+
+            .title {
+                font-family: monospace;
+                font-size: 16px;
+                font-weight: 100;
+                color: #3498db;
+                text-align: center;
+                width: 500px;
+            }
+
+            .chat-pane {
+                width: 500px;
+                height: 400px;
+                margin: 5px;
+                font-size: 18px;
+                font-family: monospace;
+            }
+
+            .textfield {
+                margin: 5px;
+                height: 30px;
+                width: 500px;
+            }
+
+            .extra-space {
+                margin-top: 20px;
+            }
+        </style>
 
     </head>
 
     <body>
 
-        <div style="display: flex; flex-direction: column;">
+        <div class="container">
 
-            <div style="display: flex; flex-direction: row; width: 100%; justify-content: center; align-content: center;">
-                <h1 style="margin-top: 15px; font-family: monospace; font-size: 16px; font-weight: 100; color: #3498db">Chat interface</h1>
-            </div>
-
-            <div style="display: flex; justify-content: center; flex-direction: row;">
+            <div class="pane-left">
                 <img id="target_image" style="width: 350px; height: 350px; margin: 5px;">  
                 <img id="target_label" style="width: 350px; height: 350px; margin: 5px;">  
                 <img id="peek" style="width: 350px; height: 350px; margin: 5px;">            
             </div>
 
-            <div style="display: flex; flex-direction: row; width: 100%; justify-content: center; align-content: center;">
-                <textarea id="chat" style="width: 500px; height: 400px; margin: 5px; font-size: 18px; font-family: monospace;"></textarea>     
-                <img id="target_image" style="width: 0px; height: 0px; margin: 5px;">               
-            </div>    
-
-            <div style="display: flex; flex-direction: row; width: 100%; justify-content: center; align-content: center;">
-                <input type="text" id="textfield_input" style="margin-top: 5px; margin-right: 10px; height: 30px; width: 500px;" class="textfield"> 
-            </div>
-
-            <div style="width: 100%; display: flex; justify-content: center; padding-top: 25px;">
-                <!-- <button id="new_game" style="margin: 5px; height: 40px; width: 130px; background-color: #3498db; text-decoration-color: white; color: white; border-radius: 7px; font-family: monospace; font-size: 16px;">Finish Game</button> -->
-
-                <button id="peek_button" style="margin: 5px; height: 40px; width: 130px; background-color: #e74c3c; text-decoration-color: white; color: white; border-radius: 7px; font-family: monospace; font-size: 16px;">Peek (?)</button>
+            <div class="pane-right">                
+                <textarea id="chat" class="chat-pane"></textarea> 
+                <input type="text" id="textfield_input" class="textfield"> 
+                <button id="send_message" class="large-button">Connecting...</button> 
+                <button id="peek_button" class="large-button" style="background-color: #fc6603;">Peek (?)</button> 
             </div>
         </div>    
     </body>
