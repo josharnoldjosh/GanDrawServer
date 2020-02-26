@@ -1,5 +1,10 @@
 import os
 import json
+from PIL import Image
+import cv2
+import base64
+import io
+from add_text import *
 
 class GameManager:
 
@@ -16,7 +21,6 @@ class GameManager:
         
             with open(path, 'w') as file:
                 json.dump(dialog, file)    
-
 
     @classmethod
     def get_dialog(self, game_id, user_type):
@@ -57,3 +61,25 @@ class GameManager:
             flags = json.load(file)
             return flags["is_drawer_turn"]
         
+    @classmethod
+    def get_target_image_and_label(self, game_id):
+        
+        def target_image(game_id):
+            imgByteArr = io.BytesIO()
+            path = os.path.join(os.getcwd(), 'data/games/', game_id, 'target_image.jpg')        
+            im = Image.open(path)
+            im.save(imgByteArr, format='PNG')        
+            return 'data:image/png;base64,'+base64.b64encode(imgByteArr.getvalue()).decode('ascii')    
+
+        def target_label(game_id):
+            path = os.path.join('data/games/', game_id, 'target_label.png')            
+            image = cv2.imread(path)    
+            image = cv2.resize(image, (350, 350))
+            text_mask = PutingText2Mask(image)
+            image = Image.fromarray(text_mask)
+            buffered = io.BytesIO()
+            image.save(buffered, format="png")        
+            img_str = 'data:image/png;base64,'+base64.b64encode(buffered.getvalue()).decode('ascii')
+            return img_str
+
+        return {'target_image':target_image(game_id), 'target_label':target_label(game_id)}

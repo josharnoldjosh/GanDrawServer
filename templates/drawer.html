@@ -24,7 +24,12 @@
 
                 socket = io.connect(ext + document.domain + ':' + location.port);
 
+                socket.on('disconnect', function() {                
+                    socket.emit('leave_game', {'game_id':game_id});                    
+                });   
+
                 socket.on('connect', function() {
+                    socket.emit('join_game', {'game_id':game_id});          
                     socket.emit('get_dialog', {'game_id':game_id, 'user_type':'Drawer'});             
                 });        
 
@@ -32,7 +37,7 @@
                     if (data["game_id"] == game_id) {                             
                         document.getElementById("chat").value = data['text'].replace(/Drawer/gi, "You");
                         document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
-                        document.getElementById("textfield_input").disabled = data['is_drawer_turn'];
+                        document.getElementById("textfield_input").disabled = !data['is_drawer_turn'];
                     }                    
                 });       
 
