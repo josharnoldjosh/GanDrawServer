@@ -54,6 +54,7 @@ def send_game_data(message):
     num_peaks_left = GM.read_flags(game_id, 'num_peaks_left')
     turn_idx = GM.get_current_turn_idx(game_id)
     peek_image = GM.get_peek_image(game_id)
+    is_game_finished = GM.read_flags(game_id, 'finished')
 
     payload = {
     'text':text,
@@ -63,7 +64,8 @@ def send_game_data(message):
     'target_image_and_label':target_image_and_label,
     'num_peaks_left':num_peaks_left,
     'turn_idx':turn_idx,
-    'peek_image':peek_image
+    'peek_image':peek_image,
+    'is_game_finished':is_game_finished
     }
 
     emit('game_data', payload, broadcast=True, room=game_id)       
@@ -85,6 +87,12 @@ def peek(message):
     num_peeks = GM.read_flags(game_id, 'num_peaks_left')
     GM.set_flags(game_id=game_id, key='num_peaks_left', value=num_peeks-1)
     GM.update_peek_image(game_id=game_id)
+    send_game_data(message)
+
+@socketio.on('finish_game')
+def finish_game(message):
+    game_id = message['game_id']
+    GM.set_flags(game_id=game_id, key='finished', value=True)
     send_game_data(message)
 
 if __name__ == '__main__':

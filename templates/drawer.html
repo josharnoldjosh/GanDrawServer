@@ -16,12 +16,16 @@
             // Other variables
             var game_id = '{{ game_id }}';  
             var email = '{{ email }}';
-
             var is_drawer_turn = false;          
-            var drawer_uploaded_images = false;
+            var drawer_uploaded_images = false
+            var target_image;
+            var is_game_finished = false;
 
             var socket;
             $(document).ready(function() {
+
+                document.getElementById("send_message").disabled = true;            
+                document.getElementById("textfield_input").disabled = true;
 
                 var ext = 'http://';            
 
@@ -51,13 +55,31 @@
                         document.getElementById('send_message').innerHTML = "Waiting for Teller...";
                         document.getElementById("send_message").style.background='#3498db';
                     }
+
+                    if (is_game_finished == true) {
+                        finish_game();
+                        return;
+                    }
                 };
 
-                socket.on('game_data', function(data) {                                                                
+                function finish_game() {                                                     
+                    document.getElementById('send_message').style.display = "none";                                                    
+                    document.getElementById('upload-images').style.display = "none";
+                    document.getElementById('textfield_input').style.display = "none";
+                    document.getElementById('title').innerHTML = "Game Finished";     
+                    document.getElementById('target_image').style.display = "block"; 
+                    document.getElementById('end_game_pane').style.display = 'block';              
+                    document.getElementById('target_image').src = target_image;
+                };
+
+                socket.on('game_data', function(data) {
                     document.getElementById("chat").value = data['text'].replace(/Drawer/gi, "You");
                     document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;                        
                     is_drawer_turn = data['is_drawer_turn'];  
                     drawer_uploaded_images = data['drawer_uploaded_images'];  
+                    is_game_finished = data['is_game_finished'];
+                    target_image = data['target_image_and_label']['target_image'];
+
                     update_state();                
                 });       
 
@@ -190,8 +212,15 @@
         <div class="container">
              
             <div class="pane-right">
-                <h1 class="title">Chat interface</h1>
+                <h1 id="title" class="title">Chat interface</h1>
                 <textarea id="chat" class="chat-pane"></textarea> 
+
+                <div id="end_game_pane" style="display: none; margin-top: 25px;">
+                    <b>Target image:</b>
+                    <img id="target_image" style="width: 350px; height: 350px; margin: 5px; display: none;">      
+                    <button id="next_game" class="large-button">Next Game</button>
+                </div>
+                
                 <input type="text" id="textfield_input" class="textfield"> 
                 <button id="send_message" class="large-button">Connecting...</button> 
             </div>

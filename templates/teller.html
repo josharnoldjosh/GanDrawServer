@@ -21,9 +21,15 @@
             var is_teller_turn = false;  
             var num_peaks_left = "?";
             var turn_idx = 0;
+            var minimum_turns_to_finish_game = 1; // UPDATE ME
+
+            var is_game_finished = false;
 
             var socket;
             $(document).ready(function() {
+
+                document.getElementById("send_message").disabled = true;
+                document.getElementById("textfield_input").disabled = true;
                 
                 var ext = 'http://';            
 
@@ -37,9 +43,23 @@
                     socket.emit('join_game', {'game_id':game_id});                    
                     socket.emit('get_game_data', {'game_id':game_id, 'user_type':'Teller'}); 
                 });       
+                
+                // Tear down this game
+                function finish_game() {
+                    document.getElementById('peek_button').style.display = "none";                    
+                    document.getElementById('send_message').style.display = "none";                    
+                    document.getElementById('finish_game').style.display = "none"; 
+                    document.getElementById('textfield_input').style.display = "none";                   
+                };
 
                 // Update the stat of the Drawer (whether they are idle or active)
-                function update_state() {                    
+                function update_state() {         
+
+                    if (is_game_finished == true) {
+                        finish_game();
+                        return;
+                    };
+
                     document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;                                        
                     document.getElementById("send_message").disabled = !is_teller_turn;
                     document.getElementById("textfield_input").disabled = !is_teller_turn;
@@ -62,6 +82,7 @@
                     is_teller_turn = !data['is_drawer_turn'];
                     num_peaks_left = data['num_peaks_left'];
                     turn_idx = Math.max(data['turn_idx'], turn_idx);
+                    is_game_finished = data['is_game_finished'];
                 };
 
                 socket.on('game_data', function(data) {                                                            
@@ -106,7 +127,19 @@
                     if ( confirm("Are you sure you want to peek?") ) {
                         socket.emit('peek', {'game_id':game_id, 'user_type':'Teller'});
                     }
+                });
 
+                document.getElementById('finish_game').addEventListener('mouseup', () => {
+                    if (turn_idx < minimum_turns_to_finish_game) {
+                        alert('Sorry, please complete at least 7 turns of dialog before you can finish the game!');
+                        return;
+                    };
+
+                    finish_game = confirm("Are you sure you want to finish the game?");
+
+                    if (finish_game) {
+                        socket.emit('finish_game', {'game_id':game_id, 'user_type':'Teller'});
+                    }
                 });
             });
         </script>
@@ -203,7 +236,8 @@
                 <textarea id="chat" class="chat-pane"></textarea> 
                 <input type="text" id="textfield_input" class="textfield"> 
                 <button id="send_message" class="large-button">Connecting...</button> 
-                <button id="peek_button" class="large-button" style="background-color: #fc6603;">Peek (?)</button> 
+                <button id="peek_button" class="large-button" style="background-color: #fc6603;">Peek (?)</button>
+                <button id="finish_game" class="large-button" style="background-color: #9342f5;">Finish Game</button> 
             </div>
         </div>    
     </body>
