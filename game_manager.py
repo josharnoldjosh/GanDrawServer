@@ -7,6 +7,8 @@ import io
 from add_text import *
 import shutil
 import re
+from uuid import uuid4
+import time
 
 class GameManager:
 
@@ -150,7 +152,10 @@ class GameManager:
             pass
 
         shutil.copyfile(intput_path, output_path)
-        return
+
+        stamp = str(uuid4())[:4]
+        with open(output_path.replace('peek.jpg', 'peek_'+stamp+'.txt'), 'w') as file: file.writelines([str(time.time())])
+        
 
 
 
