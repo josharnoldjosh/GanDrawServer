@@ -58,6 +58,7 @@
                     document.getElementById("chat").value = data['text'].replace(/Teller/gi, "You");
                     document.getElementById('target_image').src = data['target_image_and_label']['target_image'];                   
                     document.getElementById('target_label').src = data['target_image_and_label']['target_label'];
+                    document.getElementById('peek').src = data['peek_image'];
                     is_teller_turn = !data['is_drawer_turn'];
                     num_peaks_left = data['num_peaks_left'];
                     turn_idx = Math.max(data['turn_idx'], turn_idx);

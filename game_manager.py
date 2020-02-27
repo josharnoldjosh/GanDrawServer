@@ -6,6 +6,7 @@ import base64
 import io
 from add_text import *
 import shutil
+import re
 
 class GameManager:
 
@@ -110,6 +111,46 @@ class GameManager:
         target_image_path = os.path.join(path, game_id+'_target_image.jpg')
         target_label_path = os.path.join(path, game_id+'_target_label.png')
         current_turn = self.get_current_turn_idx(game_id)
-        shutil.copyfile(target_image_path, os.path.join(os.getcwd(), 'data/games', game_id, 'target_image_'+str(current_turn)+'.jpg'))
-        shutil.copyfile(target_label_path, os.path.join(os.getcwd(), 'data/games', game_id, 'target_label_'+str(current_turn)+'.jpg'))
+        shutil.copyfile(target_image_path, os.path.join(os.getcwd(), 'data/games', game_id, 'synthetic_image_'+str(current_turn)+'.jpg'))
+        shutil.copyfile(target_label_path, os.path.join(os.getcwd(), 'data/games', game_id, 'semantic_image_'+str(current_turn)+'.png'))
         return
+
+    @classmethod
+    def get_peek_image(self, game_id):
+        path = os.path.join(os.getcwd(), 'data/games/', game_id, 'peek.jpg')
+        if not os.path.exists(path): return ""
+        
+        imgByteArr = io.BytesIO()
+        im = Image.open(path)
+        im.save(imgByteArr, format='JPEG')   
+        return 'data:image/png;base64,'+base64.b64encode(imgByteArr.getvalue()).decode('ascii')
+
+    @classmethod
+    def update_peek_image(self, game_id):
+        path = os.path.join(os.getcwd(), 'data/games/', game_id)
+
+        def extract_idx(text):
+            try:
+                return int(re.findall(r'\d+', text)[0])
+            except Exception as error:
+                # print("\nError extracting int in 'update_peek_image'\n")
+                return 0
+
+        images = [x for x in os.listdir(path) if 'synthetic_image' in x]
+        if len(images) < 1: return        
+        images = sorted(images, key=lambda x: extract_idx(x), reverse=False)
+        image_to_copy = images.pop()
+
+        intput_path = os.path.join(path, image_to_copy)
+        output_path = os.path.join(path, "peek.jpg")
+
+        try:
+            os.remove(output_path)
+        except:
+            pass
+
+        shutil.copyfile(intput_path, output_path)
+        return
+
+
+

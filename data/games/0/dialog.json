@@ -1,1 +1,1 @@
-{"dialog": [{"text": "hello world", "user_type": "Teller", "turn_idx": 0}, {"text": "test", "user_type": "Drawer", "turn_idx": 0}, {"text": "test", "user_type": "Teller", "turn_idx": 1}, {"text": "continue", "user_type": "Drawer", "turn_idx": 1}, {"text": "continue", "user_type": "Teller", "turn_idx": 2}, {"text": "continue", "user_type": "Drawer", "turn_idx": 2}]}
+{"dialog": []}
